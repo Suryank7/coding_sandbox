@@ -286,12 +286,6 @@ export const useSandboxStore = create<SandboxStore>((set, get) => ({
       files: updateFileInTree(state.files, path, content),
     }));
     get().markTabDirty(path, true);
-    get().addAuditEntry({
-      timestamp: Date.now(),
-      type: 'file_change',
-      path,
-      content,
-    });
   },
 
   addFile: (parentPath, name, type) => {
@@ -316,6 +310,14 @@ export const useSandboxStore = create<SandboxStore>((set, get) => ({
       type: 'file_create',
       path: fullPath,
     });
+
+    // Sync updated tree to backend
+    const { projectId, files } = get();
+    if (projectId) {
+      import('./api').then(({ api }) => {
+        api.updateProjectTree(projectId, files).catch(console.error);
+      });
+    }
   },
 
   deleteFile: (path) => {
@@ -332,6 +334,14 @@ export const useSandboxStore = create<SandboxStore>((set, get) => ({
       type: 'file_delete',
       path,
     });
+
+    // Sync updated tree to backend
+    const { projectId, files } = get();
+    if (projectId) {
+      import('./api').then(({ api }) => {
+        api.updateProjectTree(projectId, files).catch(console.error);
+      });
+    }
   },
 
   renameFile: (oldPath, newName) => {
@@ -356,6 +366,14 @@ export const useSandboxStore = create<SandboxStore>((set, get) => ({
         activeTab: state.activeTab === oldPath ? newPath : state.activeTab,
       };
     });
+
+    // Sync updated tree to backend
+    const { projectId, files } = get();
+    if (projectId) {
+      import('./api').then(({ api }) => {
+        api.updateProjectTree(projectId, files).catch(console.error);
+      });
+    }
   },
 
   /* — Tabs — */

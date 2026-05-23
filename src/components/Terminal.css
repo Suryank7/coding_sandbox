@@ -69,7 +69,11 @@
 .t-green { color: var(--color-accent-success); }
 .t-red { color: var(--color-accent-error); }
 .t-yellow { color: var(--color-accent-warning); }
+.t-blue { color: var(--color-accent-info); }
+.t-magenta { color: #EC4899; }
+.t-white { color: var(--color-text-primary); }
 .t-dim { color: var(--color-text-muted); }
+.t-bold { font-weight: 700; }
 
 .terminal-input-row {
   display: flex;

@@ -8,6 +8,7 @@ const router = Router();
 router.post('/projects', projectController.createProject);
 router.get('/projects/:id', projectController.getProject);
 router.put('/projects/:id/files', projectController.updateFileContent);
+router.put('/projects/:id/tree', projectController.updateProjectTree);
 
 // Audit & AI Routes
 router.post('/sessions/:sessionId/audit', projectController.appendAuditLog);

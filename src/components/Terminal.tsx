@@ -7,6 +7,50 @@ interface TerminalProps {
   onCommand: (cmd: string) => void;
 }
 
+function ansiToHtml(text: string): string {
+  if (!text) return '';
+  
+  // Escape HTML characters to prevent XSS
+  let escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  // Define ANSI color replacements
+  const colorMap: { [key: string]: string } = {
+    '31': 't-red',
+    '32': 't-green',
+    '33': 't-yellow',
+    '34': 't-blue',
+    '35': 't-magenta',
+    '36': 't-cyan',
+    '37': 't-white',
+    '90': 't-dim',
+    '1': 't-bold'
+  };
+
+  // Convert ANSI formatting and colors (e.g. \x1b[32m, \x1b[1;36m, etc.)
+  escaped = escaped.replace(/[\u001b\x1b]\[([0-9;]+)m/g, (match, codesStr) => {
+    const codes = codesStr.split(';');
+    let html = '';
+    for (const code of codes) {
+      if (code === '0' || code === '39' || code === '22') {
+        html += '</span>';
+      } else if (colorMap[code]) {
+        html += `<span class="${colorMap[code]}">`;
+      }
+    }
+    return html;
+  });
+
+  // Strip all other remaining ANSI control/escape sequences (e.g. cursor motion, clear screen)
+  escaped = escaped.replace(/[\u001b\x1b]\[[0-9;]*[a-zA-Z]/g, '');
+
+  return escaped;
+}
+
 export default function Terminal({ onCommand }: TerminalProps) {
   const { terminalOutput, clearTerminalOutput } = useSandboxStore();
   const [inputValue, setInputValue] = useState('');
@@ -84,13 +128,7 @@ export default function Terminal({ onCommand }: TerminalProps) {
         <div className="terminal-output">
           {terminalOutput.map((line, idx) => (
             <pre key={idx} className="terminal-line" dangerouslySetInnerHTML={{
-              __html: line
-                .replace(/\x1b\[36m/g, '<span class="t-cyan">')
-                .replace(/\x1b\[32m/g, '<span class="t-green">')
-                .replace(/\x1b\[31m/g, '<span class="t-red">')
-                .replace(/\x1b\[33m/g, '<span class="t-yellow">')
-                .replace(/\x1b\[90m/g, '<span class="t-dim">')
-                .replace(/\x1b\[0m/g, '</span>')
+              __html: ansiToHtml(line)
             }} />
           ))}
           <div ref={bottomRef} />

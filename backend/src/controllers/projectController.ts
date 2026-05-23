@@ -134,5 +134,31 @@ export const projectController = {
         res.status(500).json({ error: 'Internal Server Error' });
       }
     }
+  },
+
+  updateProjectTree: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const validatedData = z.object({ files: z.array(fileNodeZod) }).parse(req.body);
+
+      const project = await Project.findByIdAndUpdate(
+        id,
+        { files: validatedData.files },
+        { new: true }
+      );
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      res.json({ success: true, project });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.issues });
+      } else {
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    }
   }
 };

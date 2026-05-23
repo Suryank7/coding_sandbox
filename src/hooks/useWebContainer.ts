@@ -22,6 +22,9 @@ function toFileSystemTree(nodes: FileNode[]): Record<string, any> {
   return tree;
 }
 
+// Global promise to prevent duplicate concurrent WebContainer boots (e.g. in React Strict Mode)
+let globalBootPromise: Promise<WebContainer> | null = null;
+
 export function useWebContainer() {
   const instanceRef = useRef<WebContainer | null>(null);
   const serverProcessRef = useRef<any>(null);
@@ -38,39 +41,54 @@ export function useWebContainer() {
 
   /* — Boot WebContainer — */
   const boot = useCallback(async () => {
-    if (instanceRef.current || isBooting) return instanceRef.current;
-    setIsBooting(true);
-    setContainerStatus('booting');
-    appendTerminalOutput('\x1b[36m⚡ Booting WebContainer...\x1b[0m');
+    if (instanceRef.current) return instanceRef.current;
+    
+    if (!globalBootPromise) {
+      setIsBooting(true);
+      setContainerStatus('booting');
+      appendTerminalOutput('\x1b[36m⚡ Booting WebContainer...\x1b[0m');
 
-    try {
-      const instance = await WebContainer.boot();
-      instanceRef.current = instance;
+      globalBootPromise = WebContainer.boot()
+        .then(async (instance) => {
+          instanceRef.current = instance;
 
-      // Listen for server-ready (dev server URL)
-      instance.on('server-ready', (_port: number, url: string) => {
-        setPreviewUrl(url);
-        setContainerStatus('running');
-        appendTerminalOutput(`\x1b[32m✓ Dev server ready at ${url}\x1b[0m`);
-      });
+          // Listen for server-ready (dev server URL)
+          instance.on('server-ready', (_port: number, url: string) => {
+            setPreviewUrl(url);
+            setContainerStatus('running');
+            appendTerminalOutput(`\x1b[32m✓ Dev server ready at ${url}\x1b[0m`);
+          });
 
-      // Mount initial files
-      const fsTree = toFileSystemTree(files);
-      await instance.mount(fsTree);
+          // Mount initial files
+          const fsTree = toFileSystemTree(files);
+          await instance.mount(fsTree);
 
-      setContainerStatus('ready');
-      appendTerminalOutput('\x1b[32m✓ WebContainer ready!\x1b[0m');
-      appendTerminalOutput('');
-      setIsBooting(false);
-      return instance;
-    } catch (err: any) {
-      setContainerStatus('error');
-      appendTerminalOutput(`\x1b[31m✗ Boot failed: ${err.message}\x1b[0m`);
-      appendTerminalOutput('\x1b[33m⚠ WebContainers require Chrome/Edge with cross-origin isolation headers.\x1b[0m');
-      setIsBooting(false);
-      return null;
+          setContainerStatus('ready');
+          appendTerminalOutput('\x1b[32m✓ WebContainer ready!\x1b[0m');
+          appendTerminalOutput('');
+          setIsBooting(false);
+          return instance;
+        })
+        .catch((err) => {
+          globalBootPromise = null; // Reset on error to allow retry
+          setContainerStatus('error');
+          appendTerminalOutput(`\x1b[31m✗ Boot failed: ${err.message}\x1b[0m`);
+          appendTerminalOutput('\x1b[33m⚠ WebContainers require Chrome/Edge with cross-origin isolation headers.\x1b[0m');
+          setIsBooting(false);
+          throw err;
+        });
+    } else {
+      // If a boot is already in progress, await it and capture the reference locally
+      try {
+        const instance = await globalBootPromise;
+        instanceRef.current = instance;
+      } catch (err) {
+        // Handled in primary promise catcher
+      }
     }
-  }, []);
+
+    return globalBootPromise;
+  }, [files, setContainerStatus, setPreviewUrl, appendTerminalOutput]);
 
   /* — Write a single file to the container FS — */
   const writeFile = useCallback(async (path: string, content: string) => {

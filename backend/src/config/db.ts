@@ -5,7 +5,7 @@ let mongoServer: MongoMemoryServer;
 
 export const connectDB = async () => {
   try {
-    mongoServer = await MongoMemoryServer.create();
+    mongoServer = await MongoMemoryServer.create({ instance: { launchTimeout: 60000 } });
     const uri = mongoServer.getUri();
     const conn = await mongoose.connect(uri);
     console.log(`MongoDB In-Memory Server Connected: ${conn.connection.host}`);

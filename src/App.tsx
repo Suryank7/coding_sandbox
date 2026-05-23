@@ -25,7 +25,8 @@ function App() {
     sessionId,
     setSessionId,
     files,
-    setFiles
+    setFiles,
+    addAuditEntry
   } = useSandboxStore();
 
   const {
@@ -36,6 +37,8 @@ function App() {
     runCommand,
   } = useWebContainer();
 
+  const initialFilesRef = React.useRef(files);
+
   // Boot WebContainer and initialize project on mount
   useEffect(() => {
     boot();
@@ -43,7 +46,7 @@ function App() {
     // Initialize backend project
     import('./api').then(async ({ api }) => {
       try {
-        const res = await api.createProject('Sandbox App', files);
+        const res = await api.createProject('Sandbox App', initialFilesRef.current);
         setProjectId(res.project._id);
         setSessionId(res.sessionId);
         console.log('[API] Project & Session initialized:', res);
@@ -51,7 +54,7 @@ function App() {
         console.error('[API] Failed to initialize project:', err);
       }
     });
-  }, [boot, files, setProjectId, setSessionId]);
+  }, [boot, setProjectId, setSessionId]);
 
   // Hook up auto-save logic
   const activeContent = useSandboxStore(
@@ -86,6 +89,15 @@ function App() {
         });
       }
       updateFileContent(path, content);
+      
+      // Sync audit entry only on successful debounced save
+      addAuditEntry({
+        timestamp: Date.now(),
+        type: 'file_change',
+        path,
+        content,
+      });
+
       console.log(`[AutoSave] Synced ${path} to backend.`);
     },
     (path, content) => {

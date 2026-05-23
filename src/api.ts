@@ -21,6 +21,12 @@ export const api = {
     return res.data;
   },
 
+  // Update entire project file tree
+  updateProjectTree: async (projectId: string, files: any[]) => {
+    const res = await axios.put(`${API_BASE}/projects/${projectId}/tree`, { files });
+    return res.data;
+  },
+
   // Append to audit log
   appendAuditLog: async (sessionId: string, entry: any) => {
     const res = await axios.post(`${API_BASE}/sessions/${sessionId}/audit`, entry);
