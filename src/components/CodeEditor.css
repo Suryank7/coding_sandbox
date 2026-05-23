@@ -1,0 +1,25 @@
+.code-editor-wrapper {
+  flex: 1;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+}
+
+.editor-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.editor-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--color-border-default);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

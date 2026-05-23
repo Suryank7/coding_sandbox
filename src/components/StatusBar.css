@@ -1,0 +1,43 @@
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--statusbar-height);
+  background: var(--color-accent-primary-dim);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  padding: 0 10px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.status-bar-left,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+.status-item:hover {
+  color: white;
+}
+
+.status-icon {
+  opacity: 0.9;
+}
+.status-icon.success { color: #A7F3D0; }
+.status-icon.error { color: #FECDD3; }
+
+.status-dot-idle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
